@@ -1,0 +1,72 @@
+# Amazon Echo example configuration.yaml entry
+emulated_hue:
+  expose_by_default: false
+  listen_port: 80
+  entities:
+    switch.ceiling_fan_dummy_sw:
+      name: "Family room light"
+      hidden: false
+    light.ceiling_fan_speed:
+      name: "Family room fan"
+      hidden: false
+
+switch:
+  - platform: template
+    switches:
+      ceiling_fan_dummy_sw:
+        icon_template: mdi:lightbulb
+        friendly_name: "Ceiling Fan Light"
+        value_template: "{{ is_state('input_boolean.ceiling_fan_dummy_bool', 'on') }}"
+        turn_on:
+          - service: input_boolean.turn_on
+            entity_id: input_boolean.ceiling_fan_dummy_bool
+        turn_off:
+          - service: input_boolean.turn_off
+            entity_id: input_boolean.ceiling_fan_dummy_bool
+
+input_number:
+  ceiling_fan:
+    name: Family room fan
+    initial: 0
+    min: 0
+    max: 6
+    step: 1
+    mode: slider
+
+
+light:
+  - platform: switch
+    name: Family room ceiling light
+    entity_id: switch.ceiling_fan_dummy_sw
+  - platform: template
+    lights:
+      ceiling_fan_speed:
+        friendly_name: "Ceiling Fan"
+        value_template: '{{ states("input_number.ceiling_fan")| int > 0 }}'
+        level_template: '{{ ((states("input_number.ceiling_fan")|float / 6) * 255) | int }}'
+        icon_template: >-
+          {% if states("input_number.ceiling_fan")| int > 0 %}
+            mdi:fan
+          {% else %}
+            mdi:fan-off
+          {% endif %}
+        turn_on:
+          service: input_number.set_value
+          data_template:
+            entity_id: input_number.ceiling_fan
+            value: 2
+        turn_off:
+          service: input_number.set_value
+          data_template:
+            entity_id: input_number.ceiling_fan
+            value: 0
+        set_level:
+          service: input_number.set_value
+          data_template:
+            entity_id: input_number.ceiling_fan
+            value: "{{ (brightness / 255 * 6)|int }}"
+
+
+
+input_boolean:
+  ceiling_fan_dummy_bool:
